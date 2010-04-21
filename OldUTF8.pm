@@ -19,7 +19,7 @@ use Eoldutf8;
 
 BEGIN { eval q{ use vars qw($VERSION) } }
 
-$VERSION = sprintf '%d.%02d', q$Revision: 0.55 $ =~ m/(\d+)/oxmsg;
+$VERSION = sprintf '%d.%02d', q$Revision: 0.56 $ =~ m/(\d+)/oxmsg;
 
 # poor Symbol.pm - substitute of real Symbol.pm
 BEGIN {
@@ -2650,6 +2650,14 @@ sub e_qr {
         # open character class [...]
         elsif ($char[$i] eq '[') {
             my $left = $i;
+
+            # [] make die "unmatched [] in regexp ..."
+            # (and so on)
+
+            if ($char[$i+1] eq ']') {
+                $i++;
+            }
+
             while (1) {
                 if (++$i > $#char) {
                     die "$__FILE__: unmatched [] in regexp";
@@ -2669,6 +2677,14 @@ sub e_qr {
         # open character class [^...]
         elsif ($char[$i] eq '[^') {
             my $left = $i;
+
+            # [^] make die "unmatched [] in regexp ..."
+            # (and so on)
+
+            if ($char[$i+1] eq ']') {
+                $i++;
+            }
+
             while (1) {
                 if (++$i > $#char) {
                     die "$__FILE__: unmatched [] in regexp";
@@ -2783,6 +2799,9 @@ sub e_qr_q {
         # open character class [...]
         elsif ($char[$i] eq '[') {
             my $left = $i;
+            if ($char[$i+1] eq ']') {
+                $i++;
+            }
             while (1) {
                 if (++$i > $#char) {
                     die "$__FILE__: unmatched [] in regexp";
@@ -2802,6 +2821,9 @@ sub e_qr_q {
         # open character class [^...]
         elsif ($char[$i] eq '[^') {
             my $left = $i;
+            if ($char[$i+1] eq ']') {
+                $i++;
+            }
             while (1) {
                 if (++$i > $#char) {
                     die "$__FILE__: unmatched [] in regexp";
@@ -2934,6 +2956,9 @@ sub e_s1 {
         # open character class [...]
         elsif ($char[$i] eq '[') {
             my $left = $i;
+            if ($char[$i+1] eq ']') {
+                $i++;
+            }
             while (1) {
                 if (++$i > $#char) {
                     die "$__FILE__: unmatched [] in regexp";
@@ -2953,6 +2978,9 @@ sub e_s1 {
         # open character class [^...]
         elsif ($char[$i] eq '[^') {
             my $left = $i;
+            if ($char[$i+1] eq ']') {
+                $i++;
+            }
             while (1) {
                 if (++$i > $#char) {
                     die "$__FILE__: unmatched [] in regexp";
@@ -3103,6 +3131,9 @@ sub e_s1_q {
         # open character class [...]
         elsif ($char[$i] eq '[') {
             my $left = $i;
+            if ($char[$i+1] eq ']') {
+                $i++;
+            }
             while (1) {
                 if (++$i > $#char) {
                     die "$__FILE__: unmatched [] in regexp";
@@ -3122,6 +3153,9 @@ sub e_s1_q {
         # open character class [^...]
         elsif ($char[$i] eq '[^') {
             my $left = $i;
+            if ($char[$i+1] eq ']') {
+                $i++;
+            }
             while (1) {
                 if (++$i > $#char) {
                     die "$__FILE__: unmatched [] in regexp";
@@ -3385,6 +3419,9 @@ sub e_split {
         # open character class [...]
         elsif ($char[$i] eq '[') {
             my $left = $i;
+            if ($char[$i+1] eq ']') {
+                $i++;
+            }
             while (1) {
                 if (++$i > $#char) {
                     die "$__FILE__: unmatched [] in regexp";
@@ -3404,6 +3441,9 @@ sub e_split {
         # open character class [^...]
         elsif ($char[$i] eq '[^') {
             my $left = $i;
+            if ($char[$i+1] eq ']') {
+                $i++;
+            }
             while (1) {
                 if (++$i > $#char) {
                     die "$__FILE__: unmatched [] in regexp";
@@ -3529,6 +3569,9 @@ sub e_split_q {
         # open character class [...]
         elsif ($char[$i] eq '[') {
             my $left = $i;
+            if ($char[$i+1] eq ']') {
+                $i++;
+            }
             while (1) {
                 if (++$i > $#char) {
                     die "$__FILE__: unmatched [] in regexp";
@@ -3548,6 +3591,9 @@ sub e_split_q {
         # open character class [^...]
         elsif ($char[$i] eq '[^') {
             my $left = $i;
+            if ($char[$i+1] eq ']') {
+                $i++;
+            }
             while (1) {
                 if (++$i > $#char) {
                     die "$__FILE__: unmatched [] in regexp";
@@ -3749,6 +3795,15 @@ The character classes are redefined as follows to backward compatibility.
   \v            [\x0C\x0A\x0D]
   \H            (?:(?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF]|[^\x09\x20])
   \V            (?:(?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF]|[^\x0C\x0A\x0D])
+  ---------------------------------------------------------------------------
+
+Also \b and \B are redefined as follows to backward compatibility.
+
+  ---------------------------------------------------------------------------
+  escape        class
+  ---------------------------------------------------------------------------
+  \b            (?:(?:\A|(?<=(?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF])|(?<=[^0-9A-Z_a-z]))(?=[0-9A-Z_a-z])|(?<=[0-9A-Z_a-z])(?=(?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF]|[^0-9A-Z_a-z]|\z))
+  \B            (?:(?<=[0-9A-Z_a-z])(?=[0-9A-Z_a-z])|(?:(?<=(?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF])|(?<=[^0-9A-Z_a-z]))(?=(?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF]|[^0-9A-Z_a-z]))
   ---------------------------------------------------------------------------
 
 =head1 JPerl COMPATIBLE FUNCTIONS
@@ -3991,6 +4046,39 @@ The latest value of variable $re is used as a regular expression. This will not
 actually become a problem. Because when you use /o, you are sure not to change $re.
 
 =back
+
+=item * Special variables $` and $& doesn't function
+
+  Because ...
+
+  Script
+    'AAABBBCCC' =~ /BBB/;
+
+  is escaped to
+    'AAABBBCCC' =~ /\G(?:(?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF]|[\x00-\x7F])*?(?:BBB)@Eoldutf8::m_matched/;
+
+  For multibyte anchoring,
+    <\G(?:(?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF]|[\x00-\x7F])*?> is added.
+
+  Result
+    $' = ''       (expect 'AAA')
+    $& = 'AAABBB' (expect 'BBB')
+    $` = 'CCC'
+
+  Solution ...
+
+  Script
+    'AAABBBCCC' =~ /(BBB)/;
+
+  Enclose the entire regular expression with ( ... ) for capturing.
+
+  is escaped to
+    'AAABBBCCC' =~ /\G(?:(?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF]|[\x00-\x7F])*?(?:(BBB))@Eoldutf8::m_matched/;
+
+  Result
+    $1 = 'BBB'
+
+  $1 does function instead of $&.
 
 =head1 AUTHOR
 
