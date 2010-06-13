@@ -1,5 +1,5 @@
-OldUTF8.pm
-Eoldutf8.pm
+lib/OldUTF8.pm
+lib/Eoldutf8.pm
 perl58.bat
 perl510.bat
 perl512.bat
