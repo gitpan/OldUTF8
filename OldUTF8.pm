@@ -19,7 +19,7 @@ use Eoldutf8;
 
 BEGIN { eval q{ use vars qw($VERSION $_warning) } }
 
-$VERSION = sprintf '%d.%02d', q$Revision: 0.59 $ =~ m/(\d+)/oxmsg;
+$VERSION = sprintf '%d.%02d', q$Revision: 0.60 $ =~ m/(\d+)/oxmsg;
 
 # poor Symbol.pm - substitute of real Symbol.pm
 BEGIN {
@@ -67,7 +67,7 @@ sub unimport() {}
 sub OldUTF8::escape_script;
 
 # regexp of character
-my $your_char = q{(?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF]|[\x00-\xFF]};
+my $your_char = q{(?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]|[\xF0-\xF4][\x80-\xBF][\x80-\xBF])[\x00-\xFF]|[\x00-\xFF]};
 my $qq_char   = qr/\\c[\x40-\x5F]|\\?(?:$your_char)/oxms;
 my  $q_char   = qr/$your_char/oxms;
 
@@ -75,6 +75,7 @@ my  $q_char   = qr/$your_char/oxms;
 # of ISBN 1-56592-224-7 CJKV Information Processing
 
 my $your_gap = '';
+$your_gap = q{\G(?:(?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]|[\xF0-\xF4][\x80-\xBF][\x80-\xBF])[\x00-\xFF]|[\x00-\x7F])*?};
 
 BEGIN { eval q{ use vars qw($nest) } }
 
@@ -86,7 +87,7 @@ BEGIN { eval q{ use vars qw($nest) } }
 
 my $qq_paren   = qr{(?{local $nest=0}) (?>(?:
                     \\c[\x40-\x5F] |
-                    \\? (?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF] |
+                    \\? (?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]|[\xF0-\xF4][\x80-\xBF][\x80-\xBF])[\x00-\xFF] |
                     \\ [\x00-\xFF] |
                     [^()] |
                              \(  (?{$nest++}) |
@@ -94,7 +95,7 @@ my $qq_paren   = qr{(?{local $nest=0}) (?>(?:
                  }xms;
 my $qq_brace   = qr{(?{local $nest=0}) (?>(?:
                     \\c[\x40-\x5F] |
-                    \\? (?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF] |
+                    \\? (?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]|[\xF0-\xF4][\x80-\xBF][\x80-\xBF])[\x00-\xFF] |
                     \\ [\x00-\xFF] |
                     [^{}] |
                              \{  (?{$nest++}) |
@@ -102,7 +103,7 @@ my $qq_brace   = qr{(?{local $nest=0}) (?>(?:
                  }xms;
 my $qq_bracket = qr{(?{local $nest=0}) (?>(?:
                     \\c[\x40-\x5F] |
-                    \\? (?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF] |
+                    \\? (?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]|[\xF0-\xF4][\x80-\xBF][\x80-\xBF])[\x00-\xFF] |
                     \\ [\x00-\xFF] |
                     [^[\]] |
                              \[  (?{$nest++}) |
@@ -110,7 +111,7 @@ my $qq_bracket = qr{(?{local $nest=0}) (?>(?:
                  }xms;
 my $qq_angle   = qr{(?{local $nest=0}) (?>(?:
                     \\c[\x40-\x5F] |
-                    \\? (?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF] |
+                    \\? (?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]|[\xF0-\xF4][\x80-\xBF][\x80-\xBF])[\x00-\xFF] |
                     \\ [\x00-\xFF] |
                     [^<>] |
                              \<  (?{$nest++}) |
@@ -136,25 +137,25 @@ my $qq_variable = qr{(?: \{ (?:$qq_brace)*? \} |
 
 # regexp of nested parens in qXX
 my $q_paren    = qr{(?{local $nest=0}) (?>(?:
-                    (?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF] |
+                    (?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]|[\xF0-\xF4][\x80-\xBF][\x80-\xBF])[\x00-\xFF] |
                     [^()] |
                              \(  (?{$nest++}) |
                              \)  (?(?{$nest>0})(?{$nest--})|(?!)))*) (?(?{$nest!=0})(?!))
                  }xms;
 my $q_brace    = qr{(?{local $nest=0}) (?>(?:
-                    (?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF] |
+                    (?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]|[\xF0-\xF4][\x80-\xBF][\x80-\xBF])[\x00-\xFF] |
                     [^{}] |
                              \{  (?{$nest++}) |
                              \}  (?(?{$nest>0})(?{$nest--})|(?!)))*) (?(?{$nest!=0})(?!))
                  }xms;
 my $q_bracket  = qr{(?{local $nest=0}) (?>(?:
-                    (?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF] |
+                    (?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]|[\xF0-\xF4][\x80-\xBF][\x80-\xBF])[\x00-\xFF] |
                     [^[\]] |
                              \[  (?{$nest++}) |
                              \]  (?(?{$nest>0})(?{$nest--})|(?!)))*) (?(?{$nest!=0})(?!))
                  }xms;
 my $q_angle    = qr{(?{local $nest=0}) (?>(?:
-                    (?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF] |
+                    (?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]|[\xF0-\xF4][\x80-\xBF][\x80-\xBF])[\x00-\xFF] |
                     [^<>] |
                              \<  (?{$nest++}) |
                              \>  (?(?{$nest>0})(?{$nest--})|(?!)))*) (?(?{$nest!=0})(?!))
@@ -167,6 +168,8 @@ my $q_angle    = qr{(?{local $nest=0}) (?>(?:
 my $use_re_eval = '';
 my $m_matched   = '';
 my $s_matched   = '';
+$m_matched   = q{@Eoldutf8::m_matched};
+$s_matched   = q{@Eoldutf8::s_matched};
 
 my $tr_variable   = '';   # variable of tr///
 my $sub_variable  = '';   # variable of s///
@@ -598,7 +601,7 @@ sub escape {
 
     # avoid "Error: Runtime exception" of perl version 5.005_03
 
-    elsif (/\G \b while \s* \( \s* < ((?:(?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF]|[^>\0\a\e\f\n\r\t])+?) > \s* \) \b /oxgc) {
+    elsif (/\G \b while \s* \( \s* < ((?:(?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]|[\xF0-\xF4][\x80-\xBF][\x80-\xBF])[\x00-\xFF]|[^>\0\a\e\f\n\r\t])+?) > \s* \) \b /oxgc) {
         return 'while ($_ = Eoldutf8::glob("' . $1 . '"))';
     }
 
@@ -1454,7 +1457,7 @@ sub escape {
 
     # avoid "Error: Runtime exception" of perl version 5.005_03
 
-    elsif (/\G < ((?:(?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF]|[^>\0\a\e\f\n\r\t])+?) > /oxgc) {
+    elsif (/\G < ((?:(?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]|[\xF0-\xF4][\x80-\xBF][\x80-\xBF])[\x00-\xFF]|[^>\0\a\e\f\n\r\t])+?) > /oxgc) {
         return 'Eoldutf8::glob("' . $1 . '")';
     }
 
@@ -2034,11 +2037,11 @@ sub classic_character_class {
 
     return {
         '.'  => ($modifier =~ /s/) ?
-                '(?:(?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF]|[\x00-\xFF])' :
-                '(?:(?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF]|[^\x0A])',
-        '\D' => '(?:(?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF]|[^0-9])',
-        '\S' => '(?:(?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF]|[^\x09\x0A\x0C\x0D\x20])',
-        '\W' => '(?:(?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF]|[^0-9A-Z_a-z])',
+                '(?:(?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]|[\xF0-\xF4][\x80-\xBF][\x80-\xBF])[\x00-\xFF]|[\x00-\xFF])' :
+                '(?:(?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]|[\xF0-\xF4][\x80-\xBF][\x80-\xBF])[\x00-\xFF]|[^\x0A])',
+        '\D' => '(?:(?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]|[\xF0-\xF4][\x80-\xBF][\x80-\xBF])[\x00-\xFF]|[^0-9])',
+        '\S' => '(?:(?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]|[\xF0-\xF4][\x80-\xBF][\x80-\xBF])[\x00-\xFF]|[^\x09\x0A\x0C\x0D\x20])',
+        '\W' => '(?:(?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]|[\xF0-\xF4][\x80-\xBF][\x80-\xBF])[\x00-\xFF]|[^0-9A-Z_a-z])',
         '\d' => '[0-9]',
                  # \t  \n  \f  \r space
         '\s' => '[\x09\x0A\x0C\x0D\x20]',
@@ -2050,8 +2053,8 @@ sub classic_character_class {
         # in Chapter 7: In the World of Regular Expressions
         # of ISBN 978-0-596-52010-6 Learning Perl, Fifth Edition
 
-        '\H' => '(?:(?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF]|[^\x09\x20])',
-        '\V' => '(?:(?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF]|[^\x0C\x0A\x0D])',
+        '\H' => '(?:(?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]|[\xF0-\xF4][\x80-\xBF][\x80-\xBF])[\x00-\xFF]|[^\x09\x20])',
+        '\V' => '(?:(?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]|[\xF0-\xF4][\x80-\xBF][\x80-\xBF])[\x00-\xFF]|[^\x0C\x0A\x0D])',
         '\h' => '[\x09\x20]',
         '\v' => '[\x0C\x0A\x0D]',
 
@@ -2169,6 +2172,19 @@ sub e_qq {
         if (0) {
         }
 
+        elsif ($char[$i] eq '\Q') {
+            while (1) {
+                if (++$i > $#char) {
+                    last;
+                }
+                if ($char[$i] eq '\E') {
+                    last;
+                }
+            }
+        }
+        elsif ($char[$i] eq '\E') {
+        }
+
         # $0 --> $0
         elsif ($char[$i] =~ m/\A \$ 0 \z/oxms) {
         }
@@ -2284,6 +2300,19 @@ sub e_heredoc {
 
     for (my $i=0; $i <= $#char; $i++) {
         if (0) {
+        }
+
+        elsif ($char[$i] eq '\Q') {
+            while (1) {
+                if (++$i > $#char) {
+                    last;
+                }
+                if ($char[$i] eq '\E') {
+                    last;
+                }
+            }
+        }
+        elsif ($char[$i] eq '\E') {
         }
 
         # $0 --> $0
@@ -2471,6 +2500,19 @@ sub e_qr {
 
         # /i modifier
         elsif ($char[$i] =~ m/\A [A-Za-z] \z/oxms) {
+        }
+
+        elsif ($char[$i] eq '\Q') {
+            while (1) {
+                if (++$i > $#char) {
+                    last;
+                }
+                if ($char[$i] eq '\E') {
+                    last;
+                }
+            }
+        }
+        elsif ($char[$i] eq '\E') {
         }
 
         # $0 --> $0
@@ -2769,6 +2811,19 @@ sub e_s1 {
         elsif ($char[$i] =~ m/\A [A-Za-z] \z/oxms) {
         }
 
+        elsif ($char[$i] eq '\Q') {
+            while (1) {
+                if (++$i > $#char) {
+                    last;
+                }
+                if ($char[$i] eq '\E') {
+                    last;
+                }
+            }
+        }
+        elsif ($char[$i] eq '\E') {
+        }
+
         # \0 --> \0
         elsif ($char[$i] =~ m/\A \\ \s* 0 \z/oxms) {
         }
@@ -2865,6 +2920,7 @@ sub e_s1 {
 
     # make regexp string
     my $capture_your_gap = '';
+    $capture_your_gap = "($your_gap)";
     return     join '', $ope, $delimiter, $capture_your_gap, '(?:', @char,                               ')', $s_matched, $end_delimiter, $modifier;
 }
 
@@ -2962,6 +3018,7 @@ sub e_s1_q {
     $delimiter     = '/';
     $end_delimiter = '/';
     my $capture_your_gap = '';
+    $capture_your_gap = "($your_gap)";
     return join '', $ope, $delimiter, $capture_your_gap, '(?:', @char, ')', $s_matched, $end_delimiter, $modifier;
 }
 
@@ -3069,9 +3126,11 @@ sub e_sub {
     my $sub;
     if ($modifier =~ m/g/oxms) {
 
+        my $prematch = q{1};
+
         $sub = sprintf(
-            #      1  2       3  4              5 6 7   8  9         10  1112  13      14           15          16      17     18          19       20    21      22
-            q<eval{%s %s_n=0; %s %s_a=''; while(%s%s%s){%s %s_r=eval %s; %s%s="%s_a${1}%s_r$'"; pos(%s)=length "%s_a${1}%s_r"; %s_a=substr(%s,0,pos(%s)); %s_n++} %s_n}>,
+            #      1  2       3  4              5 6 7   8  9         10  1112  13    14 15           16          17    18 19     20          21       22    23      24
+            q<eval{%s %s_n=0; %s %s_a=''; while(%s%s%s){%s %s_r=eval %s; %s%s="%s_a${%s}%s_r$'"; pos(%s)=length "%s_a${%s}%s_r"; %s_a=substr(%s,0,pos(%s)); %s_n++} %s_n}>,
 
             $local,                                                                       #  1
                 $variable_basename,                                                       #  2
@@ -3088,35 +3147,42 @@ sub e_sub {
             sprintf('%s_r=eval %s_r; ', $variable_basename, $variable_basename) x $e_modifier, # 11
             $variable,                                                                    # 12
                 $variable_basename,                                                       # 13
-                $variable_basename,                                                       # 14
-            $variable,                                                                    # 15
-                $variable_basename,                                                       # 16
+            $prematch,                                                                    # 14
+                $variable_basename,                                                       # 15
+            $variable,                                                                    # 16
                 $variable_basename,                                                       # 17
-                $variable_basename,                                                       # 18
-            $variable,                                                                    # 19
-            $variable,                                                                    # 20
-                $variable_basename,                                                       # 21
-                $variable_basename,                                                       # 22
+            $prematch,                                                                    # 18
+                $variable_basename,                                                       # 19
+                $variable_basename,                                                       # 20
+            $variable,                                                                    # 21
+            $variable,                                                                    # 22
+                $variable_basename,                                                       # 23
+                $variable_basename,                                                       # 24
         );
     }
 
     # s///
     else {
-        $sub = sprintf(
-            #  1 2 3          4  5         6   7 8       9
-            q<(%s%s%s) ? eval{%s %s_r=eval %s; %s%s="${1}%s_r$'"; 1 } : ''>,
 
-            $variable,                                                                    # 1
-            $bind_operator,                                                               # 2
-            ($delimiter1 eq "'") ?                                                        # 3
-            e_s1_q('m', $delimiter1, $end_delimiter1, $pattern, $modifier) :              # :
-            e_s1  ('m', $delimiter1, $end_delimiter1, $pattern, $modifier),               # :
-            $local,                                                                       # 4
-                $variable_basename,                                                       # 5
-            $e_replacement,                                                               # 6
-            sprintf('%s_r=eval %s_r; ', $variable_basename, $variable_basename) x $e_modifier, # 7
-            $variable,                                                                    # 8
-                $variable_basename,                                                       # 9
+        my $prematch = q{`};
+        $prematch = q{1};
+
+        $sub = sprintf(
+            #  1 2 3          4  5         6   7 8     9  10
+            q<(%s%s%s) ? eval{%s %s_r=eval %s; %s%s="${%s}%s_r$'"; 1 } : ''>,
+
+            $variable,                                                                    #  1
+            $bind_operator,                                                               #  2
+            ($delimiter1 eq "'") ?                                                        #  3
+            e_s1_q('m', $delimiter1, $end_delimiter1, $pattern, $modifier) :              #  :
+            e_s1  ('m', $delimiter1, $end_delimiter1, $pattern, $modifier),               #  :
+            $local,                                                                       #  4
+                $variable_basename,                                                       #  5
+            $e_replacement,                                                               #  6
+            sprintf('%s_r=eval %s_r; ', $variable_basename, $variable_basename) x $e_modifier, #  7
+            $variable,                                                                    #  8
+            $prematch,                                                                    #  9
+                $variable_basename,                                                       # 10
         );
     }
 
@@ -3242,6 +3308,19 @@ sub e_split {
 
         # /i modifier
         elsif ($char[$i] =~ m/\A ([A-Za-z]) \z/oxms) {
+        }
+
+        elsif ($char[$i] eq '\Q') {
+            while (1) {
+                if (++$i > $#char) {
+                    last;
+                }
+                if ($char[$i] eq '\E') {
+                    last;
+                }
+            }
+        }
+        elsif ($char[$i] eq '\E') {
         }
 
         # $0 --> $0
@@ -3576,19 +3655,19 @@ Insert chr(0x5c) before  @  [  \  ]  ^  `  {  |  and  }  in multiple octet of
 
 =back
 
-  ex. Japanese Katakana "SO" like [ `/ ] code is "\x83\x5C"
+  ex. Japanese Katakana "SO" like [ `/ ] code is "\x83\x5C" in SJIS
  
                   see     hex dump
   -----------------------------------------
   source script   "`/"    [83 5c]
   -----------------------------------------
  
-  Here, use OldUTF8;
+  Here, use SJIS;
                           hex dump
   -----------------------------------------
   escaped script  "`\/"   [83 [5c] 5c]
   -----------------------------------------
-                    ^--- escape by OldUTF8 software
+                    ^--- escape by SJIS software
  
   by the by       see     hex dump
   -----------------------------------------
@@ -3609,18 +3688,18 @@ The character classes are redefined as follows to backward compatibility.
   ---------------------------------------------------------------------------
   Before      After
   ---------------------------------------------------------------------------
-   .          (?:(?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF]|[^\x0A])
-              (?:(?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF]|[\x00-\xFF]) (/s modifier)
+   .          (?:(?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]|[\xF0-\xF4][\x80-\xBF][\x80-\xBF])[\x00-\xFF]|[^\x0A])
+              (?:(?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]|[\xF0-\xF4][\x80-\xBF][\x80-\xBF])[\x00-\xFF]|[\x00-\xFF]) (/s modifier)
   \d          [0-9]
   \s          [\x09\x0A\x0C\x0D\x20]
   \w          [0-9A-Z_a-z]
-  \D          (?:(?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF]|[^0-9])
-  \S          (?:(?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF]|[^\x09\x0A\x0C\x0D\x20])
-  \W          (?:(?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF]|[^0-9A-Z_a-z])
+  \D          (?:(?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]|[\xF0-\xF4][\x80-\xBF][\x80-\xBF])[\x00-\xFF]|[^0-9])
+  \S          (?:(?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]|[\xF0-\xF4][\x80-\xBF][\x80-\xBF])[\x00-\xFF]|[^\x09\x0A\x0C\x0D\x20])
+  \W          (?:(?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]|[\xF0-\xF4][\x80-\xBF][\x80-\xBF])[\x00-\xFF]|[^0-9A-Z_a-z])
   \h          [\x09\x20]
   \v          [\x0C\x0A\x0D]
-  \H          (?:(?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF]|[^\x09\x20])
-  \V          (?:(?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF]|[^\x0C\x0A\x0D])
+  \H          (?:(?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]|[\xF0-\xF4][\x80-\xBF][\x80-\xBF])[\x00-\xFF]|[^\x09\x20])
+  \V          (?:(?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]|[\xF0-\xF4][\x80-\xBF][\x80-\xBF])[\x00-\xFF]|[^\x0C\x0A\x0D])
   ---------------------------------------------------------------------------
 
 =head1 Escaping Built-in Functions (OldUTF8 software provides)
@@ -3859,10 +3938,10 @@ OldUTF8::substr($string, 13, 4, "JPerl");
     'AAABBBCCC' =~ /BBB/;
 
   is escaped to
-    'AAABBBCCC' =~ /\G(?:(?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF]|[\x00-\x7F])*?(?:BBB)@Eoldutf8::m_matched/;
+    'AAABBBCCC' =~ /\G(?:(?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]|[\xF0-\xF4][\x80-\xBF][\x80-\xBF])[\x00-\xFF]|[\x00-\x7F])*?(?:BBB)@Eoldutf8::m_matched/;
 
   For multibyte anchoring,
-    <\G(?:(?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF]|[\x00-\x7F])*?> is added.
+    <\G(?:(?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]|[\xF0-\xF4][\x80-\xBF][\x80-\xBF])[\x00-\xFF]|[\x00-\x7F])*?> is added.
 
   Result
     $' = ''       (expect 'AAA')
@@ -3877,7 +3956,7 @@ OldUTF8::substr($string, 13, 4, "JPerl");
   Enclose the entire regular expression with ( ... ) for capturing.
 
   is escaped to
-    'AAABBBCCC' =~ /\G(?:(?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF]|[\x00-\x7F])*?(?:(BBB))@Eoldutf8::m_matched/;
+    'AAABBBCCC' =~ /\G(?:(?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]|[\xF0-\xF4][\x80-\xBF][\x80-\xBF])[\x00-\xFF]|[\x00-\x7F])*?(?:(BBB))@Eoldutf8::m_matched/;
 
   Result
     $1 = 'BBB'
@@ -4134,6 +4213,7 @@ programming environment like at that time.
  http://ascii.asciimw.jp/books/magazines/unix.shtml
 
  Yet Another JPerl family
+ http://search.cpan.org/dist/Big5HKSCS/
  http://search.cpan.org/dist/Big5Plus/
  http://search.cpan.org/dist/EUCJP/
  http://search.cpan.org/dist/GB18030/
@@ -4201,6 +4281,7 @@ I am thankful to all persons.
  http://search.cpan.org/dist/Pod-PerldocJp/
  http://gihyo.jp/dev/serial/01/modern-perl/0031
  http://gihyo.jp/dev/serial/01/modern-perl/0032
+ http://gihyo.jp/dev/serial/01/modern-perl/0033
 
  Dan Kogai, Encode module
  http://search.cpan.org/dist/Encode/

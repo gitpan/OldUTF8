@@ -23,7 +23,7 @@ BEGIN {
 
 BEGIN { eval q{ use vars qw($VERSION $_warning) } }
 
-$VERSION = sprintf '%d.%02d', q$Revision: 0.59 $ =~ m/(\d+)/xmsg;
+$VERSION = sprintf '%d.%02d', q$Revision: 0.60 $ =~ m/(\d+)/xmsg;
 
 # poor Symbol.pm - substitute of real Symbol.pm
 BEGIN {
@@ -91,7 +91,7 @@ BEGIN {
     }
 }
 
-my $your_char = q{(?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF]|[\x00-\xFF]};
+my $your_char = q{(?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]|[\xF0-\xF4][\x80-\xBF][\x80-\xBF])[\x00-\xFF]|[\x00-\xFF]};
 
 # regexp of character
 my $q_char = qr/$your_char/oxms;
@@ -209,60 +209,6 @@ if ($^O =~ /\A (?: MSWin32 | NetWare | symbian | dos ) \z/oxms) {
         @ARGV = @argv;
     }
 }
-
-#
-# prepare old UTF-8 characters per length
-#
-my @chars1 = ();
-my @chars2 = ();
-my @chars3 = ();
-my @chars4 = ();
-if (exists $range_tr{1}) {
-    my @ranges = @{ $range_tr{1} };
-    while (my @range = splice(@ranges,0,1)) {
-        for my $oct0 (@{$range[0]}) {
-            push @chars1, pack 'C', $oct0;
-        }
-    }
-}
-if (exists $range_tr{2}) {
-    my @ranges = @{ $range_tr{2} };
-    while (my @range = splice(@ranges,0,2)) {
-        for my $oct0 (@{$range[0]}) {
-            for my $oct1 (@{$range[1]}) {
-                push @chars2, pack 'CC', $oct0,$oct1;
-            }
-        }
-    }
-}
-if (exists $range_tr{3}) {
-    my @ranges = @{ $range_tr{3} };
-    while (my @range = splice(@ranges,0,3)) {
-        for my $oct0 (@{$range[0]}) {
-            for my $oct1 (@{$range[1]}) {
-                for my $oct2 (@{$range[2]}) {
-                    push @chars3, pack 'CCC', $oct0,$oct1,$oct2;
-                }
-            }
-        }
-    }
-}
-if (exists $range_tr{4}) {
-    my @ranges = @{ $range_tr{4} };
-    while (my @range = splice(@ranges,0,4)) {
-        for my $oct0 (@{$range[0]}) {
-            for my $oct1 (@{$range[1]}) {
-                for my $oct2 (@{$range[2]}) {
-                    for my $oct3 (@{$range[3]}) {
-                        push @chars4, pack 'CCCC', $oct0,$oct1,$oct2,$oct3;
-                    }
-                }
-            }
-        }
-    }
-}
-my @minchar = (undef, $chars1[ 0], $chars2[ 0], $chars3[ 0], $chars4[ 0]);
-my @maxchar = (undef, $chars1[-1], $chars2[-1], $chars3[-1], $chars4[-1]);
 
 #
 # old UTF-8 split
@@ -561,9 +507,145 @@ sub Eoldutf8::rindex($$;$) {
 # old UTF-8 regexp capture
 #
 {
+###if MULTIBYTE_ANCHORING
+    # 10.3. Creating Persistent Private Variables
+    # in Chapter 10. Subroutines
+    # of ISBN 0-596-00313-7 Perl Cookbook, 2nd Edition.
+
+    my $last_s_matched = 0;
+
+###endif
     sub Eoldutf8::capture($) {
+###if MULTIBYTE_ANCHORING
+        if ($last_s_matched and ($_[0] =~ m/\A [1-9][0-9]* \z/oxms)) {
+            return $_[0] + 1;
+        }
+###endif
         return $_[0];
     }
+###if MULTIBYTE_ANCHORING
+
+    # old UTF-8 regexp mark last m// or qr// matched
+    sub Eoldutf8::m_matched() {
+        $last_s_matched = 0;
+    }
+
+    # old UTF-8 regexp mark last s/// or qr matched
+    sub Eoldutf8::s_matched() {
+        $last_s_matched = 1;
+    }
+
+    # which matched of m// or s/// at last
+
+    # P.854 31.17. use re
+    # in Chapter 31. Pragmatic Modules
+    # of ISBN 0-596-00027-8 Programming Perl Third Edition.
+
+    @Eoldutf8::m_matched = (qr/(?{Eoldutf8::m_matched})/);
+    @Eoldutf8::s_matched = (qr/(?{Eoldutf8::s_matched})/);
+###endif
+}
+
+#
+# prepare old UTF-8 characters per length
+#
+
+# 1 octet characters
+my @chars1 = ();
+sub chars1 {
+    if (@chars1) {
+        return @chars1;
+    }
+    if (exists $range_tr{1}) {
+        my @ranges = @{ $range_tr{1} };
+        while (my @range = splice(@ranges,0,1)) {
+            for my $oct0 (@{$range[0]}) {
+                push @chars1, pack 'C', $oct0;
+            }
+        }
+    }
+    return @chars1;
+}
+
+# 2 octets characters
+my @chars2 = ();
+sub chars2 {
+    if (@chars2) {
+        return @chars2;
+    }
+    if (exists $range_tr{2}) {
+        my @ranges = @{ $range_tr{2} };
+        while (my @range = splice(@ranges,0,2)) {
+            for my $oct0 (@{$range[0]}) {
+                for my $oct1 (@{$range[1]}) {
+                    push @chars2, pack 'CC', $oct0,$oct1;
+                }
+            }
+        }
+    }
+    return @chars2;
+}
+
+# 3 octets characters
+my @chars3 = ();
+sub chars3 {
+    if (@chars3) {
+        return @chars3;
+    }
+    if (exists $range_tr{3}) {
+        my @ranges = @{ $range_tr{3} };
+        while (my @range = splice(@ranges,0,3)) {
+            for my $oct0 (@{$range[0]}) {
+                for my $oct1 (@{$range[1]}) {
+                    for my $oct2 (@{$range[2]}) {
+                        push @chars3, pack 'CCC', $oct0,$oct1,$oct2;
+                    }
+                }
+            }
+        }
+    }
+    return @chars3;
+}
+
+# 4 octets characters
+my @chars4 = ();
+sub chars4 {
+    if (@chars4) {
+        return @chars4;
+    }
+    if (exists $range_tr{4}) {
+        my @ranges = @{ $range_tr{4} };
+        while (my @range = splice(@ranges,0,4)) {
+            for my $oct0 (@{$range[0]}) {
+                for my $oct1 (@{$range[1]}) {
+                    for my $oct2 (@{$range[2]}) {
+                        for my $oct3 (@{$range[3]}) {
+                            push @chars4, pack 'CCCC', $oct0,$oct1,$oct2,$oct3;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return @chars4;
+}
+
+# minimum value of each octet
+my @minchar = ();
+sub minchar {
+    if (defined $minchar[$_[0]]) {
+        return $minchar[$_[0]];
+    }
+    $minchar[$_[0]] = (&{(sub {}, \&chars1, \&chars2, \&chars3, \&chars4)[$_[0]]})[0];
+}
+
+# maximum value of each octet
+my @maxchar = ();
+sub maxchar {
+    if (defined $maxchar[$_[0]]) {
+        return $maxchar[$_[0]];
+    }
+    $maxchar[$_[0]] = (&{(sub {}, \&chars1, \&chars2, \&chars3, \&chars4)[$_[0]]})[-1];
 }
 
 #
@@ -636,50 +718,50 @@ sub _charlist_tr {
         # range of multiple octet code
         if (length($char[$i-1]) == 1) {
             if (length($char[$i+1]) == 1) {
-                push @range, grep {($char[$i-1] le $_) and ($_ le $char[$i+1])} @chars1;
+                push @range, grep {($char[$i-1] le $_) and ($_ le $char[$i+1])} &chars1();
             }
             elsif (length($char[$i+1]) == 2) {
-                push @range, grep {$char[$i-1] le $_}                           @chars1;
-                push @range, grep {$_ le $char[$i+1]}                           @chars2;
+                push @range, grep {$char[$i-1] le $_}                           &chars1();
+                push @range, grep {$_ le $char[$i+1]}                           &chars2();
             }
             elsif (length($char[$i+1]) == 3) {
-                push @range, grep {$char[$i-1] le $_}                           @chars1;
-                push @range,                                                    @chars2;
-                push @range, grep {$_ le $char[$i+1]}                           @chars3;
+                push @range, grep {$char[$i-1] le $_}                           &chars1();
+                push @range,                                                    &chars2();
+                push @range, grep {$_ le $char[$i+1]}                           &chars3();
             }
             elsif (length($char[$i+1]) == 4) {
-                push @range, grep {$char[$i-1] le $_}                           @chars1;
-                push @range,                                                    @chars2;
-                push @range,                                                    @chars3;
-                push @range, grep {$_ le $char[$i+1]}                           @chars4;
+                push @range, grep {$char[$i-1] le $_}                           &chars1();
+                push @range,                                                    &chars2();
+                push @range,                                                    &chars3();
+                push @range, grep {$_ le $char[$i+1]}                           &chars4();
             }
         }
         elsif (length($char[$i-1]) == 2) {
             if (length($char[$i+1]) == 2) {
-                push @range, grep {($char[$i-1] le $_) and ($_ le $char[$i+1])} @chars2;
+                push @range, grep {($char[$i-1] le $_) and ($_ le $char[$i+1])} &chars2();
             }
             elsif (length($char[$i+1]) == 3) {
-                push @range, grep {$char[$i-1] le $_}                           @chars2;
-                push @range, grep {$_ le $char[$i+1]}                           @chars3;
+                push @range, grep {$char[$i-1] le $_}                           &chars2();
+                push @range, grep {$_ le $char[$i+1]}                           &chars3();
             }
             elsif (length($char[$i+1]) == 4) {
-                push @range, grep {$char[$i-1] le $_}                           @chars2;
-                push @range,                                                    @chars3;
-                push @range, grep {$_ le $char[$i+1]}                           @chars4;
+                push @range, grep {$char[$i-1] le $_}                           &chars2();
+                push @range,                                                    &chars3();
+                push @range, grep {$_ le $char[$i+1]}                           &chars4();
             }
         }
         elsif (length($char[$i-1]) == 3) {
             if (length($char[$i+1]) == 3) {
-                push @range, grep {($char[$i-1] le $_) and ($_ le $char[$i+1])} @chars3;
+                push @range, grep {($char[$i-1] le $_) and ($_ le $char[$i+1])} &chars3();
             }
             elsif (length($char[$i+1]) == 4) {
-                push @range, grep {$char[$i-1] le $_}                           @chars3;
-                push @range, grep {$_ le $char[$i+1]}                           @chars4;
+                push @range, grep {$char[$i-1] le $_}                           &chars3();
+                push @range, grep {$_ le $char[$i+1]}                           &chars4();
             }
         }
         elsif (length($char[$i-1]) == 4) {
             if (length($char[$i+1]) == 4) {
-                push @range, grep {($char[$i-1] le $_) and ($_ le $char[$i+1])} @chars4;
+                push @range, grep {($char[$i-1] le $_) and ($_ le $char[$i+1])} &chars4();
             }
         }
 
@@ -803,29 +885,29 @@ sub _octets {
         }
         elsif (($a+1) == $z) {
             return '(?:' . join('|',
-                sprintf('\x%02X%s',         $a,         _octets($length-1,$aa,                $maxchar[$length-1],$modifier)),
-                sprintf('\x%02X%s',              $z,    _octets($length-1,$minchar[$length-1],$zz,                $modifier)),
+                sprintf('\x%02X%s',         $a,         _octets($length-1,$aa,                &maxchar($length-1),$modifier)),
+                sprintf('\x%02X%s',              $z,    _octets($length-1,&minchar($length-1),$zz,                $modifier)),
             ) . ')';
         }
         elsif (($a+2) == $z) {
             return '(?:' . join('|',
-                sprintf('\x%02X%s',         $a,         _octets($length-1,$aa,                $maxchar[$length-1],$modifier)),
-                sprintf('\x%02X%s',         $a+1,       _octets($length-1,$minchar[$length-1],$maxchar[$length-1],$modifier)),
-                sprintf('\x%02X%s',              $z,    _octets($length-1,$minchar[$length-1],$zz,                $modifier)),
+                sprintf('\x%02X%s',         $a,         _octets($length-1,$aa,                &maxchar($length-1),$modifier)),
+                sprintf('\x%02X%s',         $a+1,       _octets($length-1,&minchar($length-1),&maxchar($length-1),$modifier)),
+                sprintf('\x%02X%s',              $z,    _octets($length-1,&minchar($length-1),$zz,                $modifier)),
             ) . ')';
         }
         elsif (($a+3) == $z) {
             return '(?:' . join('|',
-                sprintf('\x%02X%s',         $a,         _octets($length-1,$aa,                $maxchar[$length-1],$modifier)),
-                sprintf('[\x%02X\x%02X]%s', $a+1,$z-1,  _octets($length-1,$minchar[$length-1],$maxchar[$length-1],$modifier)),
-                sprintf('\x%02X%s',              $z,    _octets($length-1,$minchar[$length-1],$zz,                $modifier)),
+                sprintf('\x%02X%s',         $a,         _octets($length-1,$aa,                &maxchar($length-1),$modifier)),
+                sprintf('[\x%02X\x%02X]%s', $a+1,$z-1,  _octets($length-1,&minchar($length-1),&maxchar($length-1),$modifier)),
+                sprintf('\x%02X%s',              $z,    _octets($length-1,&minchar($length-1),$zz,                $modifier)),
             ) . ')';
         }
         else {
             return '(?:' . join('|',
-                sprintf('\x%02X%s',          $a,        _octets($length-1,$aa,                $maxchar[$length-1],$modifier)),
-                sprintf('[\x%02X-\x%02X]%s', $a+1,$z-1, _octets($length-1,$minchar[$length-1],$maxchar[$length-1],$modifier)),
-                sprintf('\x%02X%s',               $z,   _octets($length-1,$minchar[$length-1],$zz,                $modifier)),
+                sprintf('\x%02X%s',          $a,        _octets($length-1,$aa,                &maxchar($length-1),$modifier)),
+                sprintf('[\x%02X-\x%02X]%s', $a+1,$z-1, _octets($length-1,&minchar($length-1),&maxchar($length-1),$modifier)),
+                sprintf('\x%02X%s',               $z,   _octets($length-1,&minchar($length-1),$zz,                $modifier)),
             ) . ')';
         }
     }
@@ -870,12 +952,12 @@ sub _charlist {
                 '\d' => '[0-9]',
                 '\s' => '[\x09\x0A\x0C\x0D\x20]',
                 '\w' => '[0-9A-Z_a-z]',
-                '\D' => '(?:(?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF]|[^0-9])',
-                '\S' => '(?:(?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF]|[^\x09\x0A\x0C\x0D\x20])',
-                '\W' => '(?:(?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF]|[^0-9A-Z_a-z])',
+                '\D' => '(?:(?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]|[\xF0-\xF4][\x80-\xBF][\x80-\xBF])[\x00-\xFF]|[^0-9])',
+                '\S' => '(?:(?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]|[\xF0-\xF4][\x80-\xBF][\x80-\xBF])[\x00-\xFF]|[^\x09\x0A\x0C\x0D\x20])',
+                '\W' => '(?:(?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]|[\xF0-\xF4][\x80-\xBF][\x80-\xBF])[\x00-\xFF]|[^0-9A-Z_a-z])',
 
-                '\H' => '(?:(?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF]|[^\x09\x20])',
-                '\V' => '(?:(?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF]|[^\x0C\x0A\x0D])',
+                '\H' => '(?:(?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]|[\xF0-\xF4][\x80-\xBF][\x80-\xBF])[\x00-\xFF]|[^\x09\x20])',
+                '\V' => '(?:(?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]|[\xF0-\xF4][\x80-\xBF][\x80-\xBF])[\x00-\xFF]|[^\x0C\x0A\x0D])',
                 '\h' => '[\x09\x20]',
                 '\v' => '[\x0C\x0A\x0D]',
 
@@ -926,41 +1008,41 @@ sub _charlist {
             elsif (length($char[$i-1]) == 1) {
                 if (length($char[$i+1]) == 2) {
                     push @charlist,
-                        _octets(1, $char[$i-1], $maxchar[1], $modifier),
-                        _octets(2, $minchar[2], $char[$i+1], $modifier);
+                        _octets(1, $char[$i-1], &maxchar(1), $modifier),
+                        _octets(2, &minchar(2), $char[$i+1], $modifier);
                 }
                 elsif (length($char[$i+1]) == 3) {
                     push @charlist,
-                        _octets(1, $char[$i-1], $maxchar[1], $modifier),
-                        _octets(2, $minchar[2], $maxchar[2], $modifier),
-                        _octets(3, $minchar[3], $char[$i+1], $modifier);
+                        _octets(1, $char[$i-1], &maxchar(1), $modifier),
+                        _octets(2, &minchar(2), &maxchar(2), $modifier),
+                        _octets(3, &minchar(3), $char[$i+1], $modifier);
                 }
                 elsif (length($char[$i+1]) == 4) {
                     push @charlist,
-                        _octets(1, $char[$i-1], $maxchar[1], $modifier),
-                        _octets(2, $minchar[2], $maxchar[2], $modifier),
-                        _octets(3, $minchar[3], $maxchar[3], $modifier),
-                        _octets(4, $minchar[4], $char[$i+1], $modifier);
+                        _octets(1, $char[$i-1], &maxchar(1), $modifier),
+                        _octets(2, &minchar(2), &maxchar(2), $modifier),
+                        _octets(3, &minchar(3), &maxchar(3), $modifier),
+                        _octets(4, &minchar(4), $char[$i+1], $modifier);
                 }
             }
             elsif (length($char[$i-1]) == 2) {
                 if (length($char[$i+1]) == 3) {
                     push @charlist,
-                        _octets(2, $char[$i-1], $maxchar[2], $modifier),
-                        _octets(3, $minchar[3], $char[$i+1], $modifier);
+                        _octets(2, $char[$i-1], &maxchar(2), $modifier),
+                        _octets(3, &minchar(3), $char[$i+1], $modifier);
                 }
                 elsif (length($char[$i+1]) == 4) {
                     push @charlist,
-                        _octets(2, $char[$i-1], $maxchar[2], $modifier),
-                        _octets(3, $minchar[3], $maxchar[3], $modifier),
-                        _octets(4, $minchar[4], $char[$i+1], $modifier);
+                        _octets(2, $char[$i-1], &maxchar(2), $modifier),
+                        _octets(3, &minchar(3), &maxchar(3), $modifier),
+                        _octets(4, &minchar(4), $char[$i+1], $modifier);
                 }
             }
             elsif (length($char[$i-1]) == 3) {
                 if (length($char[$i+1]) == 4) {
                     push @charlist,
-                        _octets(3, $char[$i-1], $maxchar[3], $modifier),
-                        _octets(4, $minchar[4], $char[$i+1], $modifier);
+                        _octets(3, $char[$i-1], &maxchar(3), $modifier),
+                        _octets(4, &minchar(4), $char[$i+1], $modifier);
                 }
             }
             else {
@@ -1085,7 +1167,7 @@ sub charlist_not_qr {
         if (scalar(@singleoctet) >= 1) {
 
             # any character other than multiple octet and single octet character class
-            return '(?!' . join('|', @charlist) . ')(?:(?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF]|[^'. join('', @singleoctet) . '])';
+            return '(?!' . join('|', @charlist) . ')(?:(?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]|[\xF0-\xF4][\x80-\xBF][\x80-\xBF])[\x00-\xFF]|[^'. join('', @singleoctet) . '])';
         }
         else {
 
@@ -1097,7 +1179,7 @@ sub charlist_not_qr {
         if (scalar(@singleoctet) >= 1) {
 
             # any character other than single octet character class
-            return                                 '(?:(?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF]|[^'. join('', @singleoctet) . '])';
+            return                                 '(?:(?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]|[\xF0-\xF4][\x80-\xBF][\x80-\xBF])[\x00-\xFF]|[^'. join('', @singleoctet) . '])';
         }
         else {
 
@@ -1192,7 +1274,7 @@ sub _dosglob {
 
     # UNIX like system
     else {
-        $expr =~ s{ \A ~ ( (?:(?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF]|[^/])* ) }
+        $expr =~ s{ \A ~ ( (?:(?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]|[\xF0-\xF4][\x80-\xBF][\x80-\xBF])[\x00-\xFF]|[^/])* ) }
                   { $1 ? (getpwnam($1))[7] : ($ENV{'HOME'} || $ENV{'LOGDIR'} || (getpwuid($<))[7]) }oxmse;
     }
 
@@ -1261,7 +1343,7 @@ OUTER:
         # wildcards with a drive prefix such as h:*.pm must be changed
         # to h:./*.pm to expand correctly
         if ($^O =~ /\A (?: MSWin32 | NetWare | symbian | dos ) \z/oxms) {
-            $expr =~ s# \A ((?:[A-Za-z]:)?) ((?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF]|[^/\\]) #$1./$2#oxms;
+            $expr =~ s# \A ((?:[A-Za-z]:)?) ((?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]|[\xF0-\xF4][\x80-\xBF][\x80-\xBF])[\x00-\xFF]|[^/\\]) #$1./$2#oxms;
         }
 
         if (($head, $tail) = _parse_path($expr,$pathsep)) {
@@ -1382,8 +1464,8 @@ sub _parse_line {
     $line .= ' ';
     my @piece = ();
     while ($line =~ m{
-        " ( (?: (?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF]|[^"]   )*  ) " \s+ |
-          ( (?: (?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF]|[^"\s] )*  )   \s+
+        " ( (?: (?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]|[\xF0-\xF4][\x80-\xBF][\x80-\xBF])[\x00-\xFF]|[^"]   )*  ) " \s+ |
+          ( (?: (?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]|[\xF0-\xF4][\x80-\xBF][\x80-\xBF])[\x00-\xFF]|[^"\s] )*  )   \s+
         }oxmsg
     ) {
         push @piece, defined($1) ? $1 : $2;
@@ -1401,7 +1483,7 @@ sub _parse_path {
     $path .= '/';
     my @subpath = ();
     while ($path =~ m{
-        ((?: (?:[\x00-\x7F]|[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3})[\x00-\xFF]|[^/\\] )+?) [/\\] }oxmsg
+        ((?: (?:[\xC0-\xDF]|[\xE0-\xEF][\x80-\xBF]|[\xF0-\xF4][\x80-\xBF][\x80-\xBF])[\x00-\xFF]|[^/\\] )+?) [/\\] }oxmsg
     ) {
         push @subpath, $1;
     }
