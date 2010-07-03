@@ -1,7 +1,7 @@
-# This file is encoded in UTF-2.
-die "This file is not encoded in UTF-2.\n" if q{あ} ne "\xe3\x81\x82";
+# This file is encoded in old UTF-8.
+die "This file is not encoded in old UTF-8.\n" if q{あ} ne "\xe3\x81\x82";
 
-use UTF2 qw(ord);
+use OldUTF8 qw(ord);
 print "1..2\n";
 
 my $__FILE__ = __FILE__;

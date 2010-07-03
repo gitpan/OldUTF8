@@ -1,7 +1,7 @@
-# This file is encoded in UTF-2.
-die "This file is not encoded in UTF-2.\n" if q{あ} ne "\xe3\x81\x82";
+# This file is encoded in old UTF-8.
+die "This file is not encoded in old UTF-8.\n" if q{あ} ne "\xe3\x81\x82";
 
-use UTF2;
+use OldUTF8;
 print "1..4\n";
 
 # メタ文字 C<\U>, C<\L>, C<\Q>, C<\E> および変数展開は考慮されておりません。
@@ -37,5 +37,3 @@ else {
 }
 
 __END__
-
-http://search.cpan.org/dist/UTF-2-Regexp/
